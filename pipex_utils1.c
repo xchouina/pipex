@@ -6,32 +6,30 @@
 /*   By: xchouina <xchouina@student.42quebec.com    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2022/05/31 12:06:43 by xchouina          #+#    #+#             */
-/*   Updated: 2022/06/03 15:57:58 by xchouina         ###   ########.fr       */
+/*   Updated: 2022/06/07 09:24:21 by xchouina         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "pipex.h"
 
-void	finding_paths(t_pipex *lst)
+void	print_error(t_pipex *lst, int n)
 {
 	int	i;
 
 	i = 0;
-	while (lst->env[i] != NULL)
+	if (n == 1)
 	{
-		if (ft_strnstr(lst->env[i], "PATH=", 5) != NULL)
-			lst->path = ft_strnstr(lst->env[i], "PATH=", 5);
-		i++;
+		write(2, "Command not found: ", 20);
+		write(2, lst->cmd[0], ft_strlen(lst->cmd[0]));
+		write(2, "\n", 1);
+		while (lst->cmd[i])
+			free(lst->cmd[i++]);
+		free(lst->cmd);
 	}
-	lst->paths = ft_split(lst->path + 5, ':');
-}
-
-void	print_error(t_pipex *lst)
-{
-	write(2, "Command not found: ", 20);
-	write(2, lst->cmd, ft_strlen(lst->cmd));
-	write(2, "\n", 1);
-	free(lst->cmd);
+	if (n == 2)
+	{
+		write(2, "Invalid path.\n", 15);
+	}
 }
 
 void	redirecting_1(t_pipex *lst)
@@ -41,10 +39,7 @@ void	redirecting_1(t_pipex *lst)
 	close(lst->pipefd[1]);
 	dup2(lst->fdi, 0);
 	close(lst->fdi);
-	executing_cmd(lst);
-	// free(lst->args[0]);
-	// free(lst->args[1]);
-	// free(lst->args);
+	execve(lst->path, lst->cmd, NULL);
 }
 
 void	redirecting_2(t_pipex *lst)
@@ -54,10 +49,7 @@ void	redirecting_2(t_pipex *lst)
 	close(lst->pipefd[0]);
 	dup2(lst->fdo, 1);
 	close(lst->fdo);
-	executing_cmd(lst);
-	// free(lst->args[0]);
-	// free(lst->args[1]);
-	// free(lst->args);
+	execve(lst->path, lst->cmd, NULL);
 }
 
 void	liberator(t_pipex *lst)
@@ -67,4 +59,17 @@ void	liberator(t_pipex *lst)
 	i = -1;
 	while (lst->paths[++i])
 		free(lst->paths[i]);
+	free(lst->paths);
+	free(lst);
+}
+
+void	liberator_dos(t_pipex *lst)
+{
+	int	i;
+
+	i = 0;
+	while (lst->cmd[i] && lst->cmd)
+		free(lst->cmd[i++]);
+	free(lst->cmd);
+	free(lst->path);
 }
